@@ -357,7 +357,7 @@ paths:
                     - id: "7e1f5f3c-5e9c-4f1d-bf18-1f8f0a9c1b2c"
                       name: "256GB Black"
                       price: 12999000
-                      activeQuantity: 5
+                      active_quantity: 5
                       characteristics:
                         - name: "Цвет"
                           value: "Чёрный"
