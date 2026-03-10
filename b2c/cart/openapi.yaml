@@ -9,6 +9,8 @@ info:
 paths:
   /api/v1/favorites:
     get:
+      tags:
+        - Избранное
       summary: Получение списка избранных товаров
       description: |
         Возвращает список товаров, добавленных пользователем в избранное.
@@ -119,6 +121,169 @@ paths:
               example:
                 code: "FAVORITES_NOT_FOUND"
                 message: "У пользователя нет избранных товаров"
+
+        "503":
+          description: B2B сервис временно недоступен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: "B2B_UNAVAILABLE"
+                message: "Сервис товаров временно недоступен, попробуйте позже"
+
+  /api/v1/favorites/{productId}:
+    post:
+      tags:
+        - Избранное
+      summary: Добавление товара в избранное
+      description: |
+        Добавляет товар в избранное пользователя.
+        Если товар уже находится в избранном, можно вернуть 200,
+        чтобы операция была безопасной для повторного вызова.
+
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          description: Идентификатор товара (UUID)
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: userId
+          in: query
+          required: true
+          description: Идентификатор пользователя (UUID)
+          schema:
+            type: string
+            format: uuid
+            example: "123e4567-e89b-12d3-a456-426614174000"
+
+      responses:
+        "201":
+          description: Товар успешно добавлен в избранное
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FavoriteMutationResponse"
+              example:
+                productId: "550e8400-e29b-41d4-a716-446655440000"
+                userId: "123e4567-e89b-12d3-a456-426614174000"
+                addedAt: "2025-03-10T10:00:00Z"
+                message: "Товар добавлен в избранное"
+
+        "200":
+          description: Товар уже был в избранном
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FavoriteMutationResponse"
+              example:
+                productId: "550e8400-e29b-41d4-a716-446655440000"
+                userId: "123e4567-e89b-12d3-a456-426614174000"
+                addedAt: "2025-03-10T10:00:00Z"
+                message: "Товар уже находится в избранном"
+
+        "400":
+          description: Невалидные параметры запроса
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: "INVALID_PARAMETER"
+                message: "Некорректный UUID productId или userId"
+
+        "401":
+          description: Пользователь не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: "UNAUTHORIZED"
+                message: "Требуется авторизация"
+
+        "404":
+          description: Товар не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: "PRODUCT_NOT_FOUND"
+                message: "Товар не найден"
+
+        "503":
+          description: B2B сервис временно недоступен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: "B2B_UNAVAILABLE"
+                message: "Сервис товаров временно недоступен, попробуйте позже"
+
+    delete:
+      tags:
+        - Избранное
+      summary: Удаление товара из избранного
+      description: |
+        Удаляет товар из избранного пользователя.
+        Если товара не было в избранном, можно всё равно вернуть 204.
+
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          description: Идентификатор товара (UUID)
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: userId
+          in: query
+          required: true
+          description: Идентификатор пользователя (UUID)
+          schema:
+            type: string
+            format: uuid
+            example: "123e4567-e89b-12d3-a456-426614174000"
+
+      responses:
+        "204":
+          description: Товар успешно удалён из избранного
+
+        "400":
+          description: Невалидные параметры запроса
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: "INVALID_PARAMETER"
+                message: "Некорректный UUID productId или userId"
+
+        "401":
+          description: Пользователь не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: "UNAUTHORIZED"
+                message: "Требуется авторизация"
+
+        "404":
+          description: Товар не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: "PRODUCT_NOT_FOUND"
+                message: "Товар не найден"
 
         "503":
           description: B2B сервис временно недоступен
@@ -283,6 +448,30 @@ components:
         - items
         - total
         - unavailableIds
+
+    FavoriteMutationResponse:
+      type: object
+      properties:
+        productId:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        userId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        addedAt:
+          type: string
+          format: date-time
+          example: "2025-03-10T10:00:00Z"
+        message:
+          type: string
+          example: "Товар добавлен в избранное"
+      required:
+        - productId
+        - userId
+        - addedAt
+        - message
 
     ErrorResponse:
       type: object
