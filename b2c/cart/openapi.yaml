@@ -798,6 +798,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
   
+  # ========== ПОДБОРКИ ==========
   /api/v1/collections/{collection_id}/products:
     get:
       tags:
@@ -805,17 +806,15 @@ paths:
       summary: Получение списка товаров из подборки
       description: |
         Возвращает список товаров, входящих в конкретную подборку
-        (например "Хиты продаж" или "Новинки").
+        (например "Хиты продаж").
 
-        Сервис хранит только идентификаторы товаров в подборке
-        и обращается в B2B сервис каталога для получения актуальной
-        информации о товарах, их SKU, ценах и наличии.
+        Сервис хранит идентификаторы товаров в подборке и обращается
+        к B2B каталогу товаров для получения актуальной информации.
 
-        Если B2B сервис временно недоступен — возвращается ошибка 503.
+        Если B2B сервис недоступен — возвращается ошибка 503.
 
-        Товары, которые больше не существуют в B2B (например удалены
-        из каталога или заблокированы), исключаются из списка `items`
-        и их идентификаторы возвращаются в поле `unavailable_ids`.
+        Товары, отсутствующие в каталоге B2B, исключаются из списка
+        `items`, а их идентификаторы возвращаются в `unavailable_ids`.
 
       parameters:
         - name: collection_id
@@ -852,35 +851,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CollectionProductsResponse"
-              example:
-                collection_title: "Хиты продаж"
-                total_products: 2
-                items:
-                  - id: 42
-                    title: "iPhone 15 Pro Max"
-                    status: "MODERATED"
-                    category:
-                      id: 3
-                      name: "Смартфоны"
-                    images:
-                      - url: "/s3/iphone15-1.jpg"
-                        ordering: 0
-                    skus:
-                      - id: 101
-                        name: "256GB Black"
-                        price: 12999000
-                        activeQuantity: 5
-                        characteristics:
-                          - name: "Цвет"
-                            value: "Чёрный"
-                          - name: "Объём памяти"
-                            value: "256 ГБ"
-                      - id: 102
-                        name: "256GB White"
-                        price: 12999000
-                        activeQuantity: 0
-                unavailable_ids:
-                  - 999
 
         "400":
           description: Невалидные параметры запроса
@@ -888,19 +858,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-              example:
-                code: "INVALID_PARAMETER"
-                message: "Параметр limit должен быть от 1 до 100"
-
-        "401":
-          description: Пользователь не авторизован
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-              example:
-                code: "UNAUTHORIZED"
-                message: "Требуется авторизация"
 
         "404":
           description: Подборка не найдена
@@ -908,9 +865,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-              example:
-                code: "COLLECTION_NOT_FOUND"
-                message: "Подборка не найдена"
 
         "503":
           description: B2B сервис временно недоступен
@@ -918,9 +872,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-              example:
-                code: "B2B_UNAVAILABLE"
-                message: "Сервис товаров временно недоступен, попробуйте позже"
 
 components:
   schemas:
@@ -1311,118 +1262,25 @@ components:
         - code
         - message
 
-    # ----- СХЕМЫ ДЛЯ ПОДБОРОК (COLLECTIONS) ТОВАРОВ -----
-
-    Category:
-      type: object
-      properties:
-        id:
-          type: integer
-          example: 3
-        name:
-          type: string
-          example: "Смартфоны"
-      required:
-        - id
-        - name
-
-    Image:
-      type: object
-      properties:
-        url:
-          type: string
-          example: "/s3/iphone15-1.jpg"
-        ordering:
-          type: integer
-          example: 0
-      required:
-        - url
-        - ordering
-
-    Characteristic:
-      type: object
-      properties:
-        name:
-          type: string
-          example: "Бренд"
-        value:
-          type: string
-          example: "Apple"
-      required:
-        - name
-        - value
-
-    SKU:
-      type: object
-      properties:
-        id:
-          type: integer
-          example: 101
-        name:
-          type: string
-          example: "256GB Black"
-        price:
-          type: integer
-          description: Цена в копейках
-          example: 12999000
-        activeQuantity:
-          type: integer
-          description: Доступное количество на складе
-          example: 5
-        characteristics:
-          type: array
-          items:
-            $ref: "#/components/schemas/Characteristic"
-      required:
-        - id
-        - name
-        - price
-        - activeQuantity
-
-    Product:
-      type: object
-      properties:
-        id:
-          type: integer
-          example: 42
-        title:
-          type: string
-          example: "iPhone 15 Pro Max"
-        status:
-          type: string
-          enum: [CREATED, ON_MODERATION, MODERATED, BLOCKED]
-          example: "MODERATED"
-        category:
-          $ref: "#/components/schemas/Category"
-        images:
-          type: array
-          items:
-            $ref: "#/components/schemas/Image"
-        skus:
-          type: array
-          items:
-            $ref: "#/components/schemas/SKU"
-      required:
-        - id
-        - title
-        - status
-        - category
-        - images
-        - skus
+    # ----- СХЕМЫ ДЛЯ ПОДБОРОК  продутов-----
 
     CollectionProductsResponse:
       type: object
       properties:
+
         collection_title:
           type: string
+          description: Название подборки
           example: "Хиты продаж"
 
         total_products:
           type: integer
+          description: Общее количество товаров в подборке
           example: 134
 
         items:
           type: array
+          description: Список товаров из подборки
           items:
             $ref: "#/components/schemas/Product"
 
@@ -1439,15 +1297,3 @@ components:
         - collection_title
         - total_products
         - items
-    Error:
-      type: object
-      properties:
-        code:
-          type: string
-          example: "COLLECTION_NOT_FOUND"
-        message:
-          type: string
-          example: "Collection not found"
-      required:
-        - code
-        - message
